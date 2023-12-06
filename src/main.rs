@@ -4,6 +4,7 @@ mod day_01;
 mod day_02;
 mod day_03;
 mod day_04;
+mod day_05;
 
 macro_rules! run_all {
     ($($l:ident),+ $(,)?) => {
@@ -20,12 +21,14 @@ macro_rules! run_all {
 macro_rules! boilerplate {
     ($day:literal, $test_part_a:literal, $test_part_b: literal, $ret_type: ty) => {
         use crate::get_input;
+        #[allow(dead_code)]
         pub fn run_part_a() -> $ret_type {
             let input = get_input($day, false, true).unwrap();
             let input = input.as_str();
             part_a(input)
         }
 
+        #[allow(dead_code)]
         pub fn run_part_b() -> $ret_type {
             let input = get_input($day, false, false).unwrap();
             let input = input.as_str();
@@ -63,5 +66,11 @@ fn get_input(day: u8, test: bool, part_a: bool) -> Result<String, std::io::Error
 }
 
 fn main() {
-    run_all!(day_01, day_02, day_03, day_04);
+    run_all!(
+        // day_01,
+        // day_02,
+        // day_03,
+        // day_04, // Day 4 part B takes a long time
+        day_05,
+    );
 }
