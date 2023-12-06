@@ -1,114 +1,98 @@
-fn part_a(input: &str) -> u32 {
-    let mask_false = input
-        .lines()
-        .map(|line| line.chars().map(|_| false).collect::<Vec<bool>>())
-        .collect::<Vec<Vec<bool>>>();
+struct Number {
+    value: u32,
+    coords: Vec<(usize, usize)>,
+}
 
-    let rows: usize = mask_false.len();
-    let cols: usize = mask_false[0].len();
-
-    let mask_numeric = input
-        .lines()
-        .map(|line| line.chars().map(|c| c.is_numeric()).collect::<Vec<bool>>())
-        .collect::<Vec<Vec<bool>>>();
-
-    // Build mask of where the symbols are
-    let mask_symbol = input
-        .lines()
-        .map(|line| {
-            line.chars()
-                .map(|x| !x.is_numeric() && x != '.')
-                .collect::<Vec<bool>>()
+impl Number {
+    fn is_adjacent(&self, coords: (usize, usize)) -> bool {
+        self.coords.iter().any(|digit_coords| {
+            digit_coords.0.abs_diff(coords.0) <= 1 && digit_coords.1.abs_diff(coords.1) <= 1
         })
-        .collect::<Vec<Vec<bool>>>();
-
-    // Build mask of any cells adjacent to symbols
-    let mut mask_symbol_adjacent = mask_false.clone();
-
-    for row in 0..rows {
-        for col in 0..cols {
-            let row_before = row.saturating_sub(1);
-            let col_before = col.saturating_sub(1);
-            let row_after = (rows - 1).min(row + 1);
-            let col_after = (cols - 1).min(col + 1);
-
-            if mask_symbol[row][col] {
-                mask_symbol_adjacent[row_before][col_before] = true;
-                mask_symbol_adjacent[row_before][col] = true;
-                mask_symbol_adjacent[row_before][col_after] = true;
-                mask_symbol_adjacent[row][col_before] = true;
-                mask_symbol_adjacent[row][col] = true;
-                mask_symbol_adjacent[row][col_after] = true;
-                mask_symbol_adjacent[row_after][col_before] = true;
-                mask_symbol_adjacent[row_after][col] = true;
-                mask_symbol_adjacent[row_after][col_after] = true;
-            }
-        }
     }
+}
 
-    // Build mask of any numeric cells which are adjacent to symbols
+struct Symbol {
+    char: char,
+    coords: (usize, usize),
+}
 
-    let mut mask_numeric_symbol_adjacent = mask_false.clone();
-
-    for row in 0..rows {
-        for col in 0..cols {
-            mask_numeric_symbol_adjacent[row][col] =
-                mask_numeric[row][col] && mask_symbol_adjacent[row][col];
-        }
-    }
-
-    // Expand mask of numeric cells which are adjacent to symbols to include any additional numeric adjacent cells
-
-    for _ in 0..3 {
-        // Maximum length of a number is 3 from inspection of the input
-        let mut temp = mask_numeric_symbol_adjacent.clone();
-        for row in 0..rows {
-            for col in 0..cols {
-                let col_before = col.saturating_sub(1);
-                let col_after = (mask_symbol[0].len() - 1).min(col + 1);
-
-                if mask_numeric_symbol_adjacent[row][col] && mask_numeric[row][col_before] {
-                    temp[row][col_before] = true;
-                }
-                if mask_numeric_symbol_adjacent[row][col] && mask_numeric[row][col_after] {
-                    temp[row][col_after] = true;
-                }
-            }
-        }
-        mask_numeric_symbol_adjacent = temp.clone();
-    }
-
-    // Filter the input with our mask
-    let mut input_chars = input
+fn parse_input(input: &str) -> (Vec<Number>, Vec<Symbol>) {
+    let input_transformed: Vec<Vec<char>> = input
         .lines()
         .map(|line| line.chars().collect::<Vec<char>>())
-        .collect::<Vec<Vec<char>>>();
-
-    for row in 0..rows {
-        for col in 0..cols {
-            if !mask_numeric_symbol_adjacent[row][col] {
-                input_chars[row][col] = ' ';
+        .collect();
+    let mut numbers: Vec<Number> = Vec::new();
+    let mut symbols: Vec<Symbol> = Vec::new();
+    let last_col_ind = input_transformed[0].len() - 1;
+    for (row_ind, row) in input_transformed.iter().enumerate() {
+        let mut num_str = String::new();
+        let mut num_coords: Vec<(usize, usize)> = Vec::new();
+        for (col_ind, character) in row.iter().enumerate() {
+            if character.is_numeric() {
+                num_str.push(*character);
+                num_coords.push((row_ind, col_ind));
+            } else {
+                if *character != '.' {
+                    // Symbol, save it to the list
+                    symbols.push(Symbol {
+                        char: *character,
+                        coords: (row_ind, col_ind),
+                    });
+                }
+            }
+            if !character.is_numeric() || col_ind == last_col_ind {
+                // We've reached a potential end to a number
+                if num_str.len() == 0 {
+                    // No number already in the queue
+                    continue;
+                } else {
+                    // We just finished scanning a number, save it to our list
+                    let number = Number {
+                        value: num_str.parse().unwrap(),
+                        coords: num_coords,
+                    };
+                    numbers.push(number);
+                    num_str = String::new();
+                    num_coords = Vec::new();
+                }
             }
         }
     }
+    (numbers, symbols)
+}
 
-    // Parse the filtered input and sum
-    input_chars
+fn part_a(input: &str) -> u32 {
+    let (numbers, symbols) = parse_input(input);
+    dbg!(numbers.len());
+    dbg!(symbols.len());
+    numbers
         .iter()
-        .map(|line| line.iter().collect::<String>())
-        .map(|line| {
-            line.split_whitespace()
-                .map(|num_str| num_str.parse::<u32>().unwrap())
-                .sum::<u32>()
+        .filter(|number| {
+            symbols
+                .iter()
+                .any(|symbol| number.is_adjacent(symbol.coords))
         })
-        .sum::<u32>()
+        .map(|number| number.value)
+        .sum()
 }
 
 #[allow(unused_variables)]
 fn part_b(input: &str) -> u32 {
-    0
+    let (numbers, symbols) = parse_input(input);
+    symbols
+        .iter()
+        .filter(|symbol| symbol.char == '*')
+        .map(|gear| {
+            numbers
+                .iter()
+                .filter(|number| number.is_adjacent(gear.coords))
+                .collect::<Vec<&Number>>()
+        })
+        .filter(|adjacent_numbers| adjacent_numbers.len() == 2)
+        .map(|adjacent_numbers| adjacent_numbers[0].value * adjacent_numbers[1].value)
+        .sum()
 }
 
 pub use crate::boilerplate;
 
-boilerplate!(3, 4361, 0, u32);
+boilerplate!(3, 4361, 467835, u32);
