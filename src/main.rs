@@ -6,6 +6,7 @@ mod day_03;
 mod day_04;
 mod day_05;
 mod day_06;
+mod day_07;
 
 macro_rules! run_all {
     ($($l:ident),+ $(,)?) => {
@@ -73,6 +74,7 @@ fn main() {
         // day_03,
         // day_04, // Day 4 part B takes a long time
         // day_05, // Day 5 part B take a long time
-        day_06,
+        // day_06,
+        day_07,
     );
 }
