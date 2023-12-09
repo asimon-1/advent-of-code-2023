@@ -1,3 +1,4 @@
+#![feature(iter_map_windows)]
 use std::fs;
 
 mod day_01;
@@ -8,6 +9,7 @@ mod day_05;
 mod day_06;
 mod day_07;
 mod day_08;
+mod day_09;
 
 macro_rules! run_all {
     ($($l:ident),+ $(,)?) => {
@@ -77,6 +79,7 @@ fn main() {
         // day_05, // Day 5 part B take a long time
         // day_06,
         // day_07,
-        day_08,
+        // day_08,
+        day_09,
     );
 }
